@@ -30,4 +30,5 @@ public class User {
     public enum Role {
         USER, CAREGIVER
     }
+
 }
