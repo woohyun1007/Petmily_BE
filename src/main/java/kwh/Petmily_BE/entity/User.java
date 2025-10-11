@@ -3,6 +3,9 @@ package kwh.Petmily_BE.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.lang.reflect.Member;
+import java.time.LocalDate;
+
 @Entity
 @Getter @Setter
 @NoArgsConstructor
@@ -16,7 +19,7 @@ public class User {
     private Long id;
 
     @Column(nullable = false, unique = true, length = 50)
-    private String username;
+    private String loginId;
 
     @Column(nullable = false)
     private String password;
@@ -24,11 +27,29 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Enumerated(EnumType.STRING)
-    private Role role;
+    @Column(nullable = false, length = 10)
+    private String name;
 
-    public enum Role {
-        USER, CAREGIVER
+    @Column(nullable = false)
+    @Temporal(TemporalType.DATE)
+    private LocalDate birthDate;
+
+    @Builder
+    private User(Long id, String loginId, String password, String name, LocalDate birthDate, String email) {
+        this.id = id;
+        this.loginId = loginId;
+        this.password = password;
+        this.email = email;
+        this.name = name;
+        this.birthDate = birthDate;
+
     }
+
+//    @Enumerated(EnumType.STRING)
+//    private Role role;
+//
+//    public enum Role {
+//        USER, CAREGIVER
+//    }
 
 }

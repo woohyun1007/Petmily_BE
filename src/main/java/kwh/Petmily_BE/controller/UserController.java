@@ -1,5 +1,6 @@
 package kwh.Petmily_BE.controller;
 
+import kwh.Petmily_BE.entity.Post;
 import kwh.Petmily_BE.entity.User;
 import kwh.Petmily_BE.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +15,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/signup")
-    public ResponseEntity<User> signup(@RequestBody User user) {
-        return ResponseEntity.ok(userService.signup(user));
+    public String signup(@RequestBody Post user) {
+        return userService.signup(user);
     }
 }
