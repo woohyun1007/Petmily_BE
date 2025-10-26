@@ -3,15 +3,14 @@ package kwh.Petmily_BE.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.lang.reflect.Member;
-import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @Builder
-@Table(name = "users")
+@Table(name = "User")
 public class User {
 
     @Id
@@ -28,28 +27,24 @@ public class User {
     private String email;
 
     @Column(nullable = false, length = 10)
-    private String name;
+    private String username;
 
-    @Column(nullable = false)
-    @Temporal(TemporalType.DATE)
-    private LocalDate birthDate;
+    @ElementCollection(fetch = FetchType.EAGER) // EAGER: 유저 조회 시 role도 항상 같이 가져옴
+    @Enumerated(EnumType.STRING)
+    private Set<Role> role = new HashSet<>();
+
+    public enum Role {
+        OWNER, SITTER, ADMIN
+    }
 
     @Builder
-    private User(Long id, String loginId, String password, String name, LocalDate birthDate, String email) {
+    private User(Long id, String loginId, String password, String username, String email, Set<Role> role) {
         this.id = id;
         this.loginId = loginId;
         this.password = password;
         this.email = email;
-        this.name = name;
-        this.birthDate = birthDate;
-
+        this.username = username;
+        this.role = role;
     }
-
-//    @Enumerated(EnumType.STRING)
-//    private Role role;
-//
-//    public enum Role {
-//        USER, CAREGIVER
-//    }
 
 }
