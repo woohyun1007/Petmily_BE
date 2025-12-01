@@ -5,12 +5,16 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import kwh.Petmily_BE.dto.CustomUserDetails;
+import kwh.Petmily_BE.enums.Role;
 import kwh.Petmily_BE.entity.User;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class JwtFilter extends OncePerRequestFilter {
 
@@ -50,15 +54,19 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         //토큰에서 username과 role 획득
-        String username = jwtTokenProvider.getUsername(token);
-        User.Role role = jwtTokenProvider.getRole(token);
+        String loginId = jwtTokenProvider.getUsername(token);
+        List<String> roles = jwtTokenProvider.getRoles(token);
 
+        Set<Role> roleSet = roles.stream()
+                .map(Role::valueOf)
+                .collect(Collectors.toSet());
 
         //user를 생성하여 값 set
-        User user = new User();
-        user.setUsername(username);
-        user.setPassword("temppassword");
-        user.setRole(role);
+        User user = User.builder()
+            .username(loginId)
+            .password("temp_password_for_security") //실제로는 암호화된 비밀번호를 넣어야 함 "temp"는 예시
+            .roles(roleSet)
+                .build();
 
         //UserDetails에 회원 정보 객체 담기
         CustomUserDetails customUserDetails = new CustomUserDetails(user);

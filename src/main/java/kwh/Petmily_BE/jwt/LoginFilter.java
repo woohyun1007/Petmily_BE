@@ -1,10 +1,14 @@
 package kwh.Petmily_BE.jwt;
 
+import com.fasterxml.jackson.databind.ObjectMapper; // 💡 ObjectMapper import
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import kwh.Petmily_BE.dto.LoginRequestDto; // 💡 LoginRequestDto import
 import kwh.Petmily_BE.dto.CustomUserDetails;
+import kwh.Petmily_BE.dto.LoginResponseDto;
 import kwh.Petmily_BE.entity.User;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -12,50 +16,64 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
 
     private final JwtTokenProvider jwtTokenProvider;
-
     private final AuthenticationManager authenticationManager;
 
-    public LoginFilter(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider) {
-
-        this.authenticationManager = authenticationManager;
-        this.jwtTokenProvider = jwtTokenProvider;
-    }
+    // 💡 ObjectMapper를 필드에 추가합니다. (Bean으로 등록 후 주입받는 것이 좋으나, 여기서는 간단히 생성)
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
 
-        String username = obtainUsername(request);
-        String password = obtainPassword(request);
+        try {
+            LoginRequestDto loginRequest = objectMapper.readValue(request.getInputStream(), LoginRequestDto.class);
 
-        // 스프링 시큐리티에서 username과 password를 검증하기 위해서는 token에 담아야 함
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, password, null);
+            String loginId = loginRequest.loginId();
+            String password = loginRequest.password();
 
-        return authenticationManager.authenticate(authToken);
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(loginId, password, null);
+
+            return authenticationManager.authenticate(authToken);
+        } catch (IOException e) {
+            throw new RuntimeException("Error parsing login request body", e);
+        }
     }
 
     //로그인 성공시 실행하는 메소드 (여기서 JWT를 발급하면 됨)
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) throws IOException {
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        String username = customUserDetails.getUsername();
+        User user = customUserDetails.getUser();
 
-        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-        Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
-        GrantedAuthority auth = iterator.next();
+        List<String> roles = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority) // GrantedAuthority -> String
+                .collect(Collectors.toList());
 
-        String role = auth.getAuthority();
+        String token = jwtTokenProvider.createToken(user.getLoginId(), roles);
 
-        String token = jwtTokenProvider.createToken(username, User.Role.valueOf(role), 60*60*10L);
+        // 응답 DTO 생성
+        LoginResponseDto responseDto = LoginResponseDto.of(token, user);
 
+        // 응답 헤더 설정
         response.addHeader("Authorization", "Bearer " + token);
+
+        // 응답 본문 설정 및 JSON 작성
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.setStatus(HttpServletResponse.SC_OK);  // 200 OK
+
+        // ObjectMapper를 사용하여 DTO를 JSON으로 변환하여 응답 스트림에 쓰기
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.writeValue(response.getWriter(), responseDto);
     }
 
     //로그인 실패시 실행하는 메소드

@@ -1,68 +1,74 @@
 package kwh.Petmily_BE.jwt;
 
 import io.jsonwebtoken.*;
-import kwh.Petmily_BE.entity.User;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtTokenProvider {
 
-    private SecretKey secretKey;
+    private final SecretKey secretKey;
+    private final Long expiredMs;
 
-    public JwtTokenProvider(@Value("${spring.jwt.secret}")String secret) {
+    public JwtTokenProvider(@Value("${spring.jwt.secret}") String secretKeyString, @Value("${spring.jwt.expiration}") Long expiredMs) {
+        // 1. SecretKey 초기화 (한 번에 처리)
+        this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes(StandardCharsets.UTF_8));
 
-        secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
+        // 2. 만료 시간 초기화
+        this.expiredMs = expiredMs;
     }
 
     // 토큰 생성
-    public String createToken(String username, User.Role role, Long expiredMs) {
+    public String createToken(String username, List<String> roles) {
+
+        long now = System.currentTimeMillis();
 
         return Jwts.builder()
                 .claim("username", username)
-                .claim("role", role)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + expiredMs))
-                .signWith(secretKey)
+                .claim("roles", roles)
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + expiredMs))
+                .signWith(this.secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // 토큰에서 유저 이름 추출
+    // 토큰에서 유저 이름 추출(loginId)
     public String getUsername(String token) {
 
-        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("username", String.class);
+        return Jwts.parser()
+                .verifyWith(secretKey).build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("username", String.class);
     }
 
     // 토큰에서 역할 추출
-    public User.Role getRole(String token) {
+    public List<String> getRoles(String token) {
 
-        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("role", User.Role.class);
+        return Jwts.parser()
+                .verifyWith(secretKey).build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("roles", List.class);
     }
 
     public Boolean isExpired(String token) {
-
-        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().getExpiration().before(new Date());
+        try {
+            return Jwts.parser().verifyWith(secretKey).build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .getExpiration().before(new Date());
+        } catch (ExpiredJwtException e) {
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
-
-//    // 토큰 유효성 검증
-//    public boolean validateToken(String token) {
-//        try {
-//            JwtParser parser = Jwts.parser()
-//                    .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8)))
-//                    .build();
-//
-//            Jws<Claims> claims = parser.parseClaimsJws(token);
-//
-//            Date now = new Date();
-//            return !claims.getBody().getExpiration().before(now);
-//        } catch (JwtException | IllegalArgumentException e) {
-//            return false;
-//        }
-//    }
 }
 

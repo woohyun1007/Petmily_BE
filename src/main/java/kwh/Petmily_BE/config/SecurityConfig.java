@@ -3,7 +3,6 @@ package kwh.Petmily_BE.config;
 import kwh.Petmily_BE.jwt.JwtFilter;
 import kwh.Petmily_BE.jwt.JwtTokenProvider;
 import kwh.Petmily_BE.jwt.LoginFilter;
-import org.hibernate.jpa.JpaComplianceViolation;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -48,15 +47,18 @@ public class SecurityConfig {
                 .formLogin(formLogin -> formLogin.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/login", "/", "/join").permitAll()
+                    .requestMatchers("/login/**", "/", "/join/**").permitAll()
                     .anyRequest().authenticated());
 
-        // 필터 주입
+        LoginFilter loginFilter = new LoginFilter(jwtTokenProvider, authenticationManager(authenticationConfiguration));
+        loginFilter.setFilterProcessesUrl("/login");
+        // 필터 주입 (*필터 등록 순서 중요)
         http
-                .addFilterBefore(new JwtFilter(jwtTokenProvider), LoginFilter.class);
+                .addFilterAt(new LoginFilter(jwtTokenProvider, authenticationManager(authenticationConfiguration)), UsernamePasswordAuthenticationFilter.class);
 
         http
-                .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAfter(new JwtFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+
         // 세션 설정
         http
                 .sessionManagement((session) -> session

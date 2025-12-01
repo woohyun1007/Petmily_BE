@@ -1,25 +1,24 @@
 package kwh.Petmily_BE.controller;
 
-
-import kwh.Petmily_BE.dto.JoinDto;
+import jakarta.validation.Valid;
+import kwh.Petmily_BE.dto.JoinRequestDto;
+import kwh.Petmily_BE.dto.JoinResponseDto;
 import kwh.Petmily_BE.service.JoinService;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-@Controller
-@ResponseBody
+@RestController
+@RequestMapping("/join")
+@RequiredArgsConstructor
 public class JoinController {
 
     private final JoinService joinService;
 
-    public JoinController(JoinService joinService) {
-        this.joinService = joinService;
-    }
-
-    @PostMapping("/join")
-    public String joinProcess(JoinDto joinDto) {
-        joinService.joinProcess(joinDto);
-        return "ok";
+    @PostMapping("/signup")
+    public ResponseEntity<JoinResponseDto> signUp(@Valid @RequestBody JoinRequestDto requestDto) {
+        JoinResponseDto responseDto = joinService.signUp(requestDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 }
