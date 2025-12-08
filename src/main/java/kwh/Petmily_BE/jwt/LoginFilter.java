@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper; // 💡 ObjectMapper import
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import kwh.Petmily_BE.dto.LoginRequestDto; // 💡 LoginRequestDto import
-import kwh.Petmily_BE.dto.CustomUserDetails;
-import kwh.Petmily_BE.dto.LoginResponseDto;
+import kwh.Petmily_BE.dto.users.LoginRequestDto; // 💡 LoginRequestDto import
+import kwh.Petmily_BE.dto.users.CustomUserDetails;
+import kwh.Petmily_BE.dto.users.LoginResponseDto;
 import kwh.Petmily_BE.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;

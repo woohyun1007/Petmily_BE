@@ -1,4 +1,4 @@
-package kwh.Petmily_BE.dto;
+package kwh.Petmily_BE.dto.pets;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

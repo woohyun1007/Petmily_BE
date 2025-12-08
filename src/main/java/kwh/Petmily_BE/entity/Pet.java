@@ -1,6 +1,7 @@
 package kwh.Petmily_BE.entity;
 
 import jakarta.persistence.*;
+import kwh.Petmily_BE.dto.pets.PetUpdateRequestDto;
 import kwh.Petmily_BE.enums.Gender;
 import lombok.*;
 
@@ -31,4 +32,10 @@ public class Pet {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User owner;
+
+    public void updateFromDto(PetUpdateRequestDto requestDto) {
+        this.caution = requestDto.caution();
+        this.age = requestDto.age();
+        this.image = requestDto.image();
+    }
 }

@@ -4,7 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import kwh.Petmily_BE.dto.CustomUserDetails;
+import kwh.Petmily_BE.dto.users.CustomUserDetails;
 import kwh.Petmily_BE.enums.Role;
 import kwh.Petmily_BE.entity.User;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

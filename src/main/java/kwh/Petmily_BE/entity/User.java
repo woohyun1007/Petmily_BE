@@ -1,6 +1,7 @@
 package kwh.Petmily_BE.entity;
 
 import jakarta.persistence.*;
+import kwh.Petmily_BE.dto.users.UserUpdateRequestDto;
 import kwh.Petmily_BE.enums.Role;
 import lombok.*;
 
@@ -35,5 +36,12 @@ public class User {
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     private Set<Role> roles; //Set<Role>을 사용해 다중 역할 지원
+
+    public void updateFromDto(UserUpdateRequestDto requestDto) {
+        this.email = requestDto.email();
+        this.username = requestDto.username();
+        this.loginId = requestDto.loginId();
+        this.password = requestDto.password();
+   }
 
 }

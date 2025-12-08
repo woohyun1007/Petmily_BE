@@ -1,4 +1,4 @@
-package kwh.Petmily_BE.dto;
+package kwh.Petmily_BE.dto.users;
 
 import kwh.Petmily_BE.enums.Role;
 import kwh.Petmily_BE.entity.User;

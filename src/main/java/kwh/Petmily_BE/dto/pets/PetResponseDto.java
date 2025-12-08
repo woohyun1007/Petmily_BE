@@ -1,4 +1,4 @@
-package kwh.Petmily_BE.dto;
+package kwh.Petmily_BE.dto.pets;
 
 import kwh.Petmily_BE.entity.Pet;
 import kwh.Petmily_BE.entity.User;
