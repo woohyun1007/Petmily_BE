@@ -10,7 +10,7 @@ import org.springframework.stereotype.*;
 public class SecurityUtil {
     // 현재 Security Context에 저장된 인증된 사용자의 ID를 반환한다.
     public static Long getCurrentUserId() {
-        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new AccessDeniedException("인증된 사용자 정보가 Security Context에 없습니다. (로그인 필요)");

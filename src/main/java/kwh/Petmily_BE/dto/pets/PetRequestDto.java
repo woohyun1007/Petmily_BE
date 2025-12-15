@@ -1,6 +1,7 @@
 package kwh.Petmily_BE.dto.pets;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import kwh.Petmily_BE.entity.User;
 import kwh.Petmily_BE.enums.Gender;
@@ -24,10 +25,7 @@ public record PetRequestDto(
         @Size(max = 300, message = "최대 300자 제한입니다.")
         String caution,
 
-        @NotBlank(message = "성별은 필수입니다.")
-        Gender genders,
-
-        @NotBlank(message = "주인명은 필수입니다.")
-        User owner
+        @NotNull(message = "성별은 필수입니다.")
+        Gender gender
 ) {
 }

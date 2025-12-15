@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import kwh.Petmily_BE.enums.Role;
 
+import java.util.Set;
+
 public record JoinRequestDto(
 
         @NotBlank(message = "이메일은 필수입니다.")
@@ -24,6 +26,6 @@ public record JoinRequestDto(
     String username,
 
         @NotNull(message = "역할(OWNER/SITTER)은 필수입니다.")
-        Role roles // 이전에 논의했던 Role Enum (OWNER, SITTER)
+        Set<Role> roles // 이전에 논의했던 Role Enum (OWNER, SITTER)
     ){
 }

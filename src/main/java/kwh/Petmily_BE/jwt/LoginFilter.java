@@ -5,63 +5,57 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import kwh.Petmily_BE.dto.users.LoginRequestDto; // 💡 LoginRequestDto import
-import kwh.Petmily_BE.dto.users.CustomUserDetails;
-import kwh.Petmily_BE.dto.users.LoginResponseDto;
-import kwh.Petmily_BE.entity.User;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
+@Slf4j
 public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
-
     private final JwtTokenProvider jwtTokenProvider;
-    private final AuthenticationManager authenticationManager;
-
-    // 💡 ObjectMapper를 필드에 추가합니다. (Bean으로 등록 후 주입받는 것이 좋으나, 여기서는 간단히 생성)
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public LoginFilter(JwtTokenProvider jwtTokenProvider) throws Exception {
+        super();
+        this.jwtTokenProvider = jwtTokenProvider;
+    }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
 
+        // 1. HTTP Body에서 JSON 파싱 (로그인 ID/PW 추출)
         try {
             LoginRequestDto loginRequest = objectMapper.readValue(request.getInputStream(), LoginRequestDto.class);
+            log.info("Login attempt for user: {}", loginRequest.getLoginId());
 
-            String loginId = loginRequest.loginId();
-            String password = loginRequest.password();
+            // 2. 인증 토큰 생성
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                    loginRequest.getLoginId(),
+                    loginRequest.getPassword(),
+                    null
+            );
 
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(loginId, password, null);
+            // 3. AuthenticationManager를 통해 인증 위임
+            // 부모 클래스가 설정받은 AuthenticationManager를 사용하여 인증을 시도합니다.
+            return this.getAuthenticationManager().authenticate(authToken);
 
-            return authenticationManager.authenticate(authToken);
         } catch (IOException e) {
-            throw new RuntimeException("Error parsing login request body", e);
+            log.error("Failed to parse login request: {}", e.getMessage());
+            // JSON 파싱 실패 시 인증 실패로 간주
+            throw new RuntimeException("Invalid request format", e);
         }
     }
 
     //로그인 성공시 실행하는 메소드 (여기서 JWT를 발급하면 됨)
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) throws IOException {
-        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        User user = customUserDetails.getUser();
-
-        List<String> roles = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority) // GrantedAuthority -> String
-                .collect(Collectors.toList());
-
-        String token = jwtTokenProvider.createToken(user.getLoginId(), roles);
-
-        // 응답 DTO 생성
-        LoginResponseDto responseDto = LoginResponseDto.of(token, user);
+        String token = jwtTokenProvider.createToken(authentication);
+        log.info("Authentication successful, token generated.");
 
         // 응답 헤더 설정
         response.addHeader("Authorization", "Bearer " + token);
@@ -70,10 +64,6 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpServletResponse.SC_OK);  // 200 OK
-
-        // ObjectMapper를 사용하여 DTO를 JSON으로 변환하여 응답 스트림에 쓰기
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.writeValue(response.getWriter(), responseDto);
     }
 
     //로그인 실패시 실행하는 메소드

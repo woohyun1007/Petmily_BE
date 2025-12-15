@@ -25,9 +25,8 @@ public class Pet {
     private String image;
     private String caution;
 
-    @ElementCollection(fetch = FetchType.EAGER) // EAGER: 요청 조회 시 status도 항상 같이 가져옴
     @Enumerated(EnumType.STRING)
-    private Gender genders;
+    private Gender gender;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

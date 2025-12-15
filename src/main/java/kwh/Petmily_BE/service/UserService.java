@@ -49,7 +49,7 @@ public class UserService implements UserDetailsService {
                 .email(requestDto.email())
                 .password(encodedPassword)
                 .username(requestDto.username())
-                .roles(Set.of(requestDto.roles()))
+                .roles(requestDto.roles())
                 .build();
 
         //DB에 저장
@@ -61,6 +61,7 @@ public class UserService implements UserDetailsService {
 
     @Transactional(readOnly = true)
     public JoinResponseDto getMyInfo() {
+        System.out.println("OK");
         // 현재 인증된 사용자 ID 획득
         Long currentUserId = SecurityUtil.getCurrentUserId();
 
@@ -82,6 +83,12 @@ public class UserService implements UserDetailsService {
 
         // User 엔티티의 수정 로직 호출
         user.updateFromDto(requestDto);
+
+        // 비밀번호 암호화 처리
+        if(requestDto.password() != null && !requestDto.password().isEmpty()) {
+            String hashedPassword = bCryptPasswordEncoder.encode(requestDto.password());
+            user.updatePassword(hashedPassword);
+        }
         return new JoinResponseDto(user);
     }
 

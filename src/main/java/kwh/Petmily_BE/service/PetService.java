@@ -23,6 +23,7 @@ public class PetService {
     private final PetRepository petRepository;
     private final UserRepository userRepository;
 
+    // 반려동물 등록
     public PetResponseDto registerPet(PetRequestDto requestDto) {
         Long currentUserId = SecurityUtil.getCurrentUserId();
 
@@ -36,7 +37,7 @@ public class PetService {
                 .detail_type(requestDto.detail_type())
                 .age(requestDto.age())
                 .image(requestDto.image())
-                .genders(requestDto.genders())
+                .gender(requestDto.gender())
                 .caution(requestDto.caution())
                 .owner(owner)
                 .build();
@@ -48,10 +49,11 @@ public class PetService {
         return new PetResponseDto(savedPet);
     }
 
+    // 권한 확인(반려동물의 주인이 맞는지 확인)
     private void checkPetOwnership(Pet pet, Long currentUserId) {
         // Pet 엔티티가 User 엔티티에 대한 getter를 가지고 있을 때
         if(!pet.getOwner().getId().equals(currentUserId)) {
-            throw new AccessDeniedException("이 반려동물 정보에 대한 권한이 없습니다.")
+            throw new AccessDeniedException("이 반려동물 정보에 대한 권한이 없습니다.");
         }
     }
 
@@ -61,7 +63,7 @@ public class PetService {
         Long currentUserId = SecurityUtil.getCurrentUserId();
 
         // 현재 사용자 ID를 기반으로 반려동물 목록 조회
-        List<Pet> pets = petRepository.findByOwnerId(currentUserId);
+        List<Pet> pets = petRepository.findByOwner_Id(currentUserId);
 
         // Entity List를 DTO List로 변환
         return pets.stream()
@@ -71,8 +73,8 @@ public class PetService {
 
     // 특정 반려동물 정보 조회
     @Transactional(readOnly = true)
-    public PetResponseDto getPetById(Long petId) {
-        Pet pet = petRepository.findById(petId)
+    public PetResponseDto getPetById(Long id) {
+        Pet pet = petRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 반려동물을 찾을 수 없습니다."));
 
         checkPetOwnership(pet, SecurityUtil.getCurrentUserId());
@@ -81,9 +83,9 @@ public class PetService {
 
 
     @Transactional
-    public PetResponseDto updatePet(Long petId, PetUpdateRequestDto requestDto) {
+    public PetResponseDto updatePet(Long id, PetUpdateRequestDto requestDto) {
         // Pet 엔티티 조회 (checkPetOwnership에서 예외를 던질 수 있으르모 다시 조회)
-        Pet pet = petRepository.findById(petId)
+        Pet pet = petRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 반려동물을 찾을 수 없습니다."));
 
         // 소유권 확인
@@ -95,9 +97,9 @@ public class PetService {
     }
 
     @Transactional
-    public void deletePet(Long petId) {
+    public void deletePet(Long id) {
         // 반려동물 엔티티 조회
-        Pet pet = petRepository.findById(petId)
+        Pet pet = petRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("해당 반려동물을 찾을 수 없습니다."));
 
         // 소유권 확인

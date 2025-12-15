@@ -38,10 +38,16 @@ public class User {
     private Set<Role> roles; //Set<Role>을 사용해 다중 역할 지원
 
     public void updateFromDto(UserUpdateRequestDto requestDto) {
-        this.email = requestDto.email();
-        this.username = requestDto.username();
-        this.loginId = requestDto.loginId();
-        this.password = requestDto.password();
+        if(requestDto.email() != null) {
+            this.email = requestDto.email();
+        }
+        if(requestDto.username() != null) {
+            this.username = requestDto.username();
+        }
+   }
+
+   public void updatePassword(String encodedPassword) {
+        this.password = encodedPassword;
    }
 
 }

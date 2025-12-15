@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 @Tag(name = "User API", description = "회원 관련 API")
 public class UserController {
@@ -28,7 +28,7 @@ public class UserController {
     }
 
     @Operation(summary = "회원 정보 조회", description = "회원 정보를 조회합니다.")
-    @GetMapping("/info/{id}")
+    @GetMapping("/info")
     public ResponseEntity<JoinResponseDto> getMyInfo() {
         JoinResponseDto responseDto = userService.getMyInfo();
         return ResponseEntity.ok(responseDto);
@@ -42,7 +42,7 @@ public class UserController {
     }
 
     @Operation(summary = "회원탈퇴", description = "회원 탈퇴를 진행합니다.")
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/delete")
     public ResponseEntity<Void> deleteUser() {
         userService.deleteMyInfo();
         return ResponseEntity.noContent().build();

@@ -9,9 +9,6 @@ public record UserUpdateRequestDto(
         @Size(min = 2, max = 10, message = "이름은 2~10자여야 합니다.")
         String username,
 
-
-        String loginId,
-
         String password
 ) {
 }
