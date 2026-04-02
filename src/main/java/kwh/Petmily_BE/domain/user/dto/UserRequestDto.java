@@ -29,14 +29,14 @@ public record UserRequestDto(
         @NotNull(message = "역할(OWNER/SITTER)은 필수입니다.")
         Role roles      // Set<Role> 대신 단일 Role로 받아서 안전하게 처리
 ){
-    // DTO -> Entity 변환 메소드
+    // DTO -> Entity 변환 시 빌더 사용
     public User toEntity(String encodedPassword) {
         return User.builder()
-                .loginId(this.loginId)
+                .loginId(loginId)
                 .password(encodedPassword)
-                .email(this.email)
-                .nickname(this.nickname)
-                .roles(Collections.singleton(this.roles))
+                .email(email)
+                .nickname(nickname)
+                .roles(Collections.singleton(roles))
                 .build();
     }
 }

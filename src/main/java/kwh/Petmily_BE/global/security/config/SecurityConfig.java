@@ -2,14 +2,12 @@ package kwh.Petmily_BE.global.security.config;
 
 import kwh.Petmily_BE.global.security.jwt.JwtFilter;
 import kwh.Petmily_BE.global.security.jwt.JwtTokenProvider;
-import kwh.Petmily_BE.global.security.jwt.LoginFilter;
 import kwh.Petmily_BE.global.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -45,10 +43,6 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        LoginFilter loginFilter = new LoginFilter(jwtTokenProvider);
-        loginFilter.setAuthenticationManager(authenticationManager(authenticationConfiguration));
-        loginFilter.setFilterProcessesUrl("/api/login");
-
         JwtFilter jwtFilter = new JwtFilter(jwtTokenProvider);
 
         // 인증 예외 경로 등록
@@ -61,14 +55,15 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/", "/api/users", "/swagger-ui/**", "/v3/**").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/reissue", "/", "/swagger-ui/**", "/v3/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
-                        .requestMatchers("/api/users/info").authenticated()
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/auth/logout").authenticated()
+                        .requestMatchers(HttpMethod.GET,"/api/auth").authenticated()
                         .anyRequest().authenticated());
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-        http.addFilterAt(loginFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -78,7 +73,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // 프론트엔드 주소 허용
-        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:3000"));
+        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:5173"));
         configuration.setAllowedMethods(Collections.singletonList("*"));
         configuration.setAllowedHeaders(Collections.singletonList("*"));
         configuration.setAllowCredentials(true);

@@ -9,11 +9,15 @@ import kwh.Petmily_BE.domain.pet.entity.Pet;
 import kwh.Petmily_BE.domain.user.entity.User;
 import kwh.Petmily_BE.domain.pet.repository.PetRepository;
 import kwh.Petmily_BE.domain.user.repository.UserRepository;
+import kwh.Petmily_BE.global.file.FileService;
+import kwh.Petmily_BE.domain.post.repository.PostRepository;
+import kwh.Petmily_BE.domain.post.repository.CommentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,17 +27,27 @@ public class PetService {
 
     private final PetRepository petRepository;
     private final UserRepository userRepository;
+    private final FileService fileService;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final EntityManager em;
 
     // 반려동물 등록
+    @Transactional
     public PetResponseDto registerPet(Long userId, PetRequestDto requestDto) {
+        String imageUrl = null;
+        if (requestDto.image() != null && !requestDto.image().isEmpty()) {
+            // 잘못된 변수(image)를 requestDto.image()로 변경
+            imageUrl = fileService.storeFile(requestDto.image());
+        }
         User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         //RequestDto -> Pet Entity 변환
-        Pet newPet = requestDto.toEntity(owner);
-
+        Pet newPet = requestDto.toEntity(owner, imageUrl);
+        Pet savedPet = petRepository.save(newPet);
         //Entity -> ReponseDto 변환 후 반환
-        return new PetResponseDto(petRepository.save(newPet));
+        return PetResponseDto.from(savedPet);
     }
 
     // 권한 확인(반려동물의 주인이 맞는지 확인)
@@ -48,7 +62,7 @@ public class PetService {
     @Transactional(readOnly = true)
     public List<PetResponseDto> getMyPets(Long userId) {
         return petRepository.findByOwner_Id(userId).stream()
-                .map(PetResponseDto::new)
+                .map(PetResponseDto::from)
                 .collect(Collectors.toList());
     }
 
@@ -60,7 +74,7 @@ public class PetService {
 
         checkPetOwnership(pet, userId);
 
-        return new PetResponseDto(pet);
+        return PetResponseDto.from(pet);
     }
 
 
@@ -72,9 +86,17 @@ public class PetService {
         // 소유권 확인
         checkPetOwnership(pet, userId);
 
-        pet.updateInfo(requestDto.name(), requestDto.caution(), requestDto.age(), requestDto.image());
+        // 이미지가 새로 들어오면 저장하고 URL을 업데이트에 사용
+        String newImageUrl = null;
+        if (requestDto.image() != null && !requestDto.image().isEmpty()) {
+            // 기존 이미지 삭제 (있다면)
+            fileService.deleteFile(pet.getImageUrl());
+            newImageUrl = fileService.storeFile(requestDto.image());
+        }
 
-        return new PetResponseDto(pet);
+        pet.updateInfo(requestDto.name(), requestDto.type(), requestDto.breed(), requestDto.age(), newImageUrl, requestDto.caution());
+
+        return PetResponseDto.from(pet);
     }
 
     @Transactional
@@ -85,7 +107,25 @@ public class PetService {
 
         // 소유권 확인
         checkPetOwnership(pet, userId);
-        // 삭제
+
+        // 해당 펫에 연결된 게시글 id들을 조회
+        List<Long> postIds = postRepository.findIdsByPetId(petId);
+
+        if (!postIds.isEmpty()) {
+            // 댓글을 배치 삭제
+            commentRepository.deleteAllByPostIds(postIds);
+            // 게시글을 배치 삭제
+            postRepository.deleteAllByPetId(petId);
+
+            // 영속성 컨텍스트 동기화
+            em.flush();
+            em.clear();
+        }
+
+        // 업로드된 이미지 파일 삭제
+        fileService.deleteFile(pet.getImageUrl());
+
+        // 펫 삭제
         petRepository.delete(pet);
     }
 }

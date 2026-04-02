@@ -9,7 +9,7 @@ import kwh.Petmily_BE.domain.pet.dto.PetUpdateRequestDto;
 import kwh.Petmily_BE.domain.pet.service.PetService;
 import kwh.Petmily_BE.global.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -25,10 +25,10 @@ public class PetController {
     private final PetService petService;
 
     @Operation(summary = "반려동물 등록", description = "새로운 반려동물을 등록합니다.")
-    @PostMapping
-    public ResponseEntity<PetResponseDto> registerPet(@AuthenticationPrincipal CustomUserDetails userDetails, @Valid@RequestBody PetRequestDto requestDto) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PetResponseDto> registerPet(@AuthenticationPrincipal CustomUserDetails userDetails, @Valid@ModelAttribute PetRequestDto requestDto) {
         PetResponseDto responseDto = petService.registerPet(userDetails.getId(), requestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+        return ResponseEntity.ok(responseDto);
     }
 
     @Operation(summary = "반려동물 목록 조회", description = "반려동물 목록을 조회합니다.")
@@ -46,8 +46,8 @@ public class PetController {
     }
 
     @Operation(summary = "반려동물 정보 변경", description = "해당 반려동물 정보를 변경합니다.")
-    @PatchMapping("/{petId}")
-    public ResponseEntity<PetResponseDto> updatePet(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable("petId") Long petId, @Valid@RequestBody PetUpdateRequestDto requestDto) {
+    @PatchMapping(value = "/{petId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PetResponseDto> updatePet(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable("petId") Long petId, @Valid@ModelAttribute PetUpdateRequestDto requestDto) {
         PetResponseDto responseDto = petService.updatePet(userDetails.getId(), petId, requestDto);
         return ResponseEntity.ok(responseDto);
     }

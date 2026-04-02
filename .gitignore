@@ -204,4 +204,5 @@ $RECYCLE.BIN/
 *.lnk
 
 **/src/main/resources/.env
+**/uploads/
 # End of https://www.toptal.com/developers/gitignore/api/java,intellij,windows

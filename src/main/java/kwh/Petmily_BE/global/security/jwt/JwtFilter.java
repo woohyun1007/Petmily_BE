@@ -9,6 +9,7 @@ import kwh.Petmily_BE.global.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,37 +31,22 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        //request에서 Authorization 헤더를 찾음
         String authorization = request.getHeader("Authorization");
-
-        if (authorization == null || !authorization.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
+        String token = null;
+        if(authorization != null && authorization.startsWith("Bearer ")) {
+            token = authorization.substring(7);
         }
 
-        String token = authorization.substring(7);
+        if(token != null && jwtTokenProvider.validateToken(token)) {
+            try {
+                Authentication auth = jwtTokenProvider.getAuthentication(token);
 
-        // 토큰이 있고, SecurityContext에 인증 정보가 없는 경우에만 인증 시도
-        try {
-            if (jwtTokenProvider.validateToken(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
-
-                // DB 조회 대신 토큰에 담긴 정보로 Principal 생성
-                // Provider에서 ID와 Username, Role을 꺼내서 바로 UserDetails를 만듦
-                String loginId = jwtTokenProvider.getUsernameFromToken(token);
-                Long userId = jwtTokenProvider.getUserIdFromToken(token);
-                List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
-
-                CustomUserDetails userDetails = new CustomUserDetails(userId, loginId, authorities);
-
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
-
-                // SecurityContext에 인증 객체 저장
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                log.debug("Security Context에 '{}' 인증 정보를 저장했습니다.", auth.getName());
+            } catch (Exception e) {
+                log.error("인증 객체 생성 중 오류 발생: {}", e.getMessage());
             }
-        } catch (Exception e) {
-            log.error("Security Context에 인증 정보를 설정할 수 없습니다.: {}", e.getMessage());
-    }
-
+        }
         filterChain.doFilter(request, response);
     }
 }

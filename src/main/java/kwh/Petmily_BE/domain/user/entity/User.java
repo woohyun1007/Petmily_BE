@@ -36,13 +36,18 @@ public class User {
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     private Set<Role> roles; //Set<Role>을 사용해 다중 역할 지원
 
+    // 카카오 연동용 ID (null 허용)
+    @Column(nullable = true, unique = true)
+    private Long kakaoId;
+
     @Builder    // 필요한 필드만 명시적으로 빌더 구성
-    private User(String loginId, String password, String email, String nickname, Set<Role> roles) {
+    private User(String loginId, String password, String email, String nickname, Set<Role> roles, Long kakaoId) {
         this.loginId = loginId;
         this.password = password;
         this.email = email;
         this.nickname = nickname;
         this.roles = roles;
+        this.kakaoId = kakaoId;
     }
 
     // DTO 대신 순수 파라미터를 받아서 업데이트
@@ -56,6 +61,11 @@ public class User {
 
     public void updatePassword(String encodedPassword) {
         this.password = encodedPassword;
+    }
+
+    // 카카오 ID 설정
+    public void setKakaoId(Long kakaoId) {
+        this.kakaoId = kakaoId;
     }
 
     private void validateUsername(String nickname) {

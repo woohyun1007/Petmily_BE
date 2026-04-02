@@ -1,4 +1,4 @@
-package kwh.Petmily_BE.domain.user.dto;
+package kwh.Petmily_BE.domain.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
 

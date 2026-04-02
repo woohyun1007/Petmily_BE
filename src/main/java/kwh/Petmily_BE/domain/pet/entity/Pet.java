@@ -1,7 +1,7 @@
 package kwh.Petmily_BE.domain.pet.entity;
 
 import jakarta.persistence.*;
-import kwh.Petmily_BE.domain.pet.dto.PetUpdateRequestDto;
+import kwh.Petmily_BE.domain.pet.entity.enums.Type;
 import kwh.Petmily_BE.domain.user.entity.User;
 import kwh.Petmily_BE.domain.pet.entity.enums.Gender;
 import lombok.*;
@@ -19,15 +19,15 @@ public class Pet {
     @Column(nullable = false)
     private String name;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String type;    // ex.개, 고양이 등등
+    private Type type;    // ex.개, 고양이 등등
 
-    @Column(name = "detail_type")
-    private String detail;     // ex.비숑, 말티즈 등등
+    private String breed;     // ex.비숑, 말티즈 등등
 
-    private int age;
+    private Integer age;
 
-    private String image;
+    private String imageUrl;
 
     @Lob
     private String caution;
@@ -36,25 +36,27 @@ public class Pet {
     private Gender gender;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User owner;
 
     @Builder
-    private Pet(String name, String type, String detail, int age, String image, String caution, Gender gender, User owner) {
+    private Pet(String name, Type type, String breed, Integer age, String imageUrl, String caution, Gender gender, User owner) {
         this.name = name;
         this.type = type;
-        this.detail = detail;
+        this.breed = breed;
         this.age = age;
-        this.image = image;
+        this.imageUrl = imageUrl;
         this.caution = caution;
         this.gender = gender;
         this.owner = owner;
     }
 
-    public void updateInfo(String name, String caution, Integer age, String image) {
-        if(name != null) this.name = name;
-        if(caution != null) this.caution = caution;
-        if(age != null) this.age = age;
-        if(image != null) this.image = image;
+    public void updateInfo(String name, Type type, String breed, Integer age, String imageUrl, String caution) {
+        if (name != null) this.name = name;
+        if (type != null) this.type = type;
+        if (breed != null) this.breed = breed;
+        if (age != null) this.age = age;
+        if (imageUrl != null) this.imageUrl = imageUrl;
+        if (caution != null) this.caution = caution;
     }
 }
