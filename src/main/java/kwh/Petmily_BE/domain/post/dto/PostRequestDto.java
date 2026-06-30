@@ -18,6 +18,7 @@ public record PostRequestDto(
 
         String region,          // 지역, 주소 등
 
+        @NotNull(message = "가격 단위를 선택해주세요.")
         PriceUnit priceUnit,
 
         Long price,              // 의뢰비

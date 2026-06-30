@@ -1,12 +1,7 @@
 package kwh.Petmily_BE.domain.user.entity;
 
 import jakarta.persistence.*;
-import kwh.Petmily_BE.domain.user.entity.enums.Role;
-import kwh.Petmily_BE.global.error.ErrorCode;
-import kwh.Petmily_BE.global.error.exception.BusinessException;
 import lombok.*;
-
-import java.util.Set;
 
 @Entity
 @Getter
@@ -30,31 +25,23 @@ public class User {
     @Column(nullable = false, length = 10)
     private String nickname;
 
-    //역할(Role) 리스트를 별도 테이블에 저장 (N:M 관계를 간소화)
-    @ElementCollection(fetch = FetchType.LAZY) // EAGER: 유저 조회 시 role도 항상 같이 가져옴
-    @Enumerated(EnumType.STRING)
-    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
-    private Set<Role> roles; //Set<Role>을 사용해 다중 역할 지원
-
     // 카카오 연동용 ID (null 허용)
     @Column(nullable = true, unique = true)
     private Long kakaoId;
 
     @Builder    // 필요한 필드만 명시적으로 빌더 구성
-    private User(String loginId, String password, String email, String nickname, Set<Role> roles, Long kakaoId) {
+    private User(String loginId, String password, String email, String nickname, Long kakaoId) {
         this.loginId = loginId;
         this.password = password;
         this.email = email;
         this.nickname = nickname;
-        this.roles = roles;
         this.kakaoId = kakaoId;
     }
 
     // DTO 대신 순수 파라미터를 받아서 업데이트
-    public void updateProfile(String email, String nickname) {
-        if (email != null) this.email = email;
+    public void updateProfile(String nickname) {
         if (nickname != null) {
-            validateUsername(nickname);
+//            validateUsername(nickname);
             this.nickname = nickname;
         }
     }
@@ -68,8 +55,8 @@ public class User {
         this.kakaoId = kakaoId;
     }
 
-    private void validateUsername(String nickname) {
-        if (nickname.length() > 10) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
-    }
+//    private void validateUsername(String nickname) {
+//        if (nickname.length() > 10) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
+//    }
 
 }

@@ -1,10 +1,7 @@
 package kwh.Petmily_BE.domain.user.dto;
 
-import kwh.Petmily_BE.domain.user.entity.enums.Role;
 import kwh.Petmily_BE.domain.user.entity.User;
 import lombok.Builder;
-
-import java.util.Set;
 
 @Builder
 public record UserResponseDto(
@@ -12,8 +9,7 @@ public record UserResponseDto(
         String nickname,
         String email,
         String loginId,
-        String password,
-        Set<Role> roles
+        String password
 ) {
     // Entity -> DTO 변환 시 빌더 활용
     public static UserResponseDto from(User user) {
@@ -22,7 +18,6 @@ public record UserResponseDto(
                 .email(user.getEmail())
                 .loginId(user.getLoginId())
                 .password(user.getPassword())
-                .roles(user.getRoles())
                 .build();
 
     }

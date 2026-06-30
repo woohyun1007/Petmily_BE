@@ -3,9 +3,6 @@ package kwh.Petmily_BE.domain.user.dto;
 
 import jakarta.validation.constraints.*;
 import kwh.Petmily_BE.domain.user.entity.User;
-import kwh.Petmily_BE.domain.user.entity.enums.Role;
-
-import java.util.Collections;
 
 public record UserRequestDto(
 
@@ -14,6 +11,7 @@ public record UserRequestDto(
         String email,
 
         @NotBlank(message = "아이디는 필수입니다.")
+        @Size(min = 2, max = 20, message = "아이디는 2글자 이상 20글자 이하로 입력해주세요.")
         String loginId,
 
         @NotBlank(message = "비밀번호는 필수입니다.")
@@ -23,11 +21,10 @@ public record UserRequestDto(
         )
         String password,
 
-        @NotBlank(message = "이름은 필수입니다.")
-        String nickname,
+        @NotBlank(message = "닉네임은 필수입니다.")
+        @Size(min = 2, max = 10, message = "닉네임은 2자 이상 10자 이하로 입력해주세요.")
+        String nickname
 
-        @NotNull(message = "역할(OWNER/SITTER)은 필수입니다.")
-        Role roles      // Set<Role> 대신 단일 Role로 받아서 안전하게 처리
 ){
     // DTO -> Entity 변환 시 빌더 사용
     public User toEntity(String encodedPassword) {
@@ -36,7 +33,6 @@ public record UserRequestDto(
                 .password(encodedPassword)
                 .email(email)
                 .nickname(nickname)
-                .roles(Collections.singleton(roles))
                 .build();
     }
 }

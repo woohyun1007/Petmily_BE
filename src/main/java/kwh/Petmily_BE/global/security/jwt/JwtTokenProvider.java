@@ -7,15 +7,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
 import java.util.Date;
-import java.util.List;
+import java.util.Collections;
 
 @Slf4j
 @Component
@@ -44,14 +41,9 @@ public class JwtTokenProvider {
         Date now = new Date();
         Date validity = new Date(now.getTime() + expiredMs);
 
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList();
-
         return Jwts.builder()
                 .subject(userDetails.getUsername()) // loginId
                 .claim("id", userDetails.getId())
-                .claim("roles", roles)
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(secretKey)
@@ -64,14 +56,9 @@ public class JwtTokenProvider {
         // 7일
         Date validity = new Date(now.getTime() + refresh_expiredMs);
 
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList();
-
         return Jwts.builder()
                 .subject(userDetails.getUsername())
                 .claim("id", userDetails.getId())
-                .claim("roles", roles)
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(secretKey)
@@ -102,13 +89,10 @@ public class JwtTokenProvider {
         Long id = claims.get("id", Long.class);
         String username = claims.getSubject();
 
-        List<?> roles = claims.get("roles", List.class);
-        Collection<? extends GrantedAuthority> authorities = roles.stream()
-                .map(role -> new SimpleGrantedAuthority(role.toString()))
-                .toList();
-        // 2. 권한 정보 추출 (List -> GrantedAuthority 변환 필요)
-        CustomUserDetails userDetails = new CustomUserDetails(id, username, authorities);
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        // 2. 권한 정보 추출
+        CustomUserDetails userDetails = new CustomUserDetails(id, username);
+        // 권한 사용을 제거했으므로 빈 권한 리스트를 명시적으로 설정
+        return new UsernamePasswordAuthenticationToken(userDetails, "", Collections.emptyList());
     }
 
     private Claims getClaims(String token) {
@@ -119,4 +103,3 @@ public class JwtTokenProvider {
                 .getPayload();
     }
 }
-

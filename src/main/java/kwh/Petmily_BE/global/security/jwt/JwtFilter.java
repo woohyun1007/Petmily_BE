@@ -2,24 +2,18 @@ package kwh.Petmily_BE.global.security.jwt;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import kwh.Petmily_BE.global.security.CustomUserDetails;
-import kwh.Petmily_BE.global.security.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -35,6 +29,21 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = null;
         if(authorization != null && authorization.startsWith("Bearer ")) {
             token = authorization.substring(7);
+        }
+
+        // Authorization 헤더가 없을 경우 쿠키에서 accessToken을 확인
+        if (token == null) {
+            if (request.getCookies() != null) {
+                for (Cookie cookie : request.getCookies()) {
+                    if ("accessToken".equals(cookie.getName())) {
+                        String value = cookie.getValue();
+                        if (value != null && !value.isBlank()) {
+                            token = value;
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
         if(token != null && jwtTokenProvider.validateToken(token)) {

@@ -3,6 +3,7 @@ package kwh.Petmily_BE.domain.post.service;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import kwh.Petmily_BE.domain.post.entity.enums.PriceUnit;
 import kwh.Petmily_BE.domain.post.entity.enums.RequestStatus;
 import kwh.Petmily_BE.global.error.ErrorCode;
 import kwh.Petmily_BE.global.error.exception.BusinessException;
@@ -16,7 +17,6 @@ import kwh.Petmily_BE.domain.post.entity.enums.PostCategory;
 import kwh.Petmily_BE.domain.pet.repository.PetRepository;
 import kwh.Petmily_BE.domain.post.repository.PostRepository;
 import kwh.Petmily_BE.domain.user.repository.UserRepository;
-import kwh.Petmily_BE.global.file.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -26,7 +26,6 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -47,7 +46,9 @@ public class PostService {
         if(requestDto.category() == PostCategory.CARE_REQUEST) {
             pet = petRepository.findByIdAndOwnerId(requestDto.petId(), userId)
                     .orElseThrow(() -> new BusinessException(ErrorCode.PET_NOT_FOUND));
-            processPetForPost(requestDto,null, pet.getId(), writer);
+            processForPost(requestDto,null, pet.getId(), writer);
+        } else if(requestDto.category() == PostCategory.CARE_OFFER) {
+            processForPost(requestDto,null, null, writer);
         }
 
         Post newPost = requestDto.toEntity(writer, pet);
@@ -94,7 +95,9 @@ public class PostService {
             pet = petRepository.findByIdAndOwnerId(requestDto.petId(), userId)
                     .orElseThrow(() -> new BusinessException(ErrorCode.PET_NOT_FOUND));
 
-            processPetForPost(null, requestDto, pet.getId(), post.getWriter());
+            processForPost(null, requestDto, pet.getId(), post.getWriter());
+        } else if(requestDto.category() == PostCategory.CARE_OFFER) {
+            processForPost(null, requestDto, null, post.getWriter());
         }
 
         // update with latitude and longitude from DTO
@@ -132,17 +135,27 @@ public class PostService {
     }
 
     // RequestDto와 writer를 기반으로 Pet을 조회하거나 권한 검증을 한다.
-    private Pet processPetForPost(PostRequestDto requestDto, PostUpdateRequestDto updateDto, Long petId, User writer) {
-        if(updateDto == null) {
-            if (requestDto.region() == null || requestDto.region().isBlank()) throw new BusinessException(ErrorCode.REGION_REQUIRED);
-            if (requestDto.price() == null|| requestDto.price() < 0) throw new BusinessException(ErrorCode.INVALID_PRICE);
-            if (requestDto.petId() == null) throw new BusinessException(ErrorCode.PET_REQUIRED_FOR_CARE);
-        } else if(requestDto == null) {
+    private Pet processForPost(PostRequestDto requestDto, PostUpdateRequestDto updateDto, Long petId, User writer) {
+        if(requestDto.category() == PostCategory.CARE_REQUEST) {
+             if (requestDto.region() == null || requestDto.region().isBlank()) throw new BusinessException(ErrorCode.REGION_REQUIRED);
+             if (requestDto.priceUnit() != PriceUnit.NOT_REQUIRED && (requestDto.price() == null || requestDto.price() < 0)) throw new BusinessException(ErrorCode.INVALID_PRICE);
+             if (requestDto.petId() == null) throw new BusinessException(ErrorCode.PET_REQUIRED_FOR_CARE);
+        } else if(requestDto.category() == PostCategory.CARE_OFFER) {
+             if (requestDto.region() == null || requestDto.region().isBlank())
+                 throw new BusinessException(ErrorCode.REGION_REQUIRED);
+             if (requestDto.priceUnit() != PriceUnit.NOT_REQUIRED && (requestDto.price() == null || requestDto.price() < 0))
+                 throw new BusinessException(ErrorCode.INVALID_PRICE);
+        } else if(updateDto.category() == PostCategory.CARE_REQUEST) {
             if (updateDto.region() == null || updateDto.region().isBlank())
                 throw new BusinessException(ErrorCode.REGION_REQUIRED);
-            if (updateDto.price() == null || updateDto.price() < 0)
+            if (updateDto.priceUnit() != PriceUnit.NOT_REQUIRED && (updateDto.price() == null || updateDto.price() < 0))
                 throw new BusinessException(ErrorCode.INVALID_PRICE);
             if (updateDto.petId() == null) throw new BusinessException(ErrorCode.PET_REQUIRED_FOR_CARE);
+        } else if(updateDto.category() == PostCategory.CARE_OFFER) {
+             if (updateDto.region() == null || updateDto.region().isBlank())
+                 throw new BusinessException(ErrorCode.REGION_REQUIRED);
+             if (updateDto.priceUnit() != PriceUnit.NOT_REQUIRED && (updateDto.price() == null || updateDto.price() < 0))
+                 throw new BusinessException(ErrorCode.INVALID_PRICE);
         }
         if(petId != null) {
             Pet pet = petRepository.findById(petId)

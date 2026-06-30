@@ -12,10 +12,8 @@ import kwh.Petmily_BE.global.error.ErrorCode;
 import kwh.Petmily_BE.global.security.CustomUserDetails;
 import kwh.Petmily_BE.domain.pet.entity.Pet;
 import kwh.Petmily_BE.domain.pet.repository.PetRepository;
-import kwh.Petmily_BE.domain.post.entity.Post;
 import kwh.Petmily_BE.domain.post.repository.PostRepository;
 import kwh.Petmily_BE.domain.post.repository.CommentRepository;
-import kwh.Petmily_BE.domain.pet.service.PetService;
 import kwh.Petmily_BE.global.file.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -36,7 +34,6 @@ public class UserService implements UserDetailsService {
     private final PetRepository petRepository;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
-    private final PetService petService;
     private final FileService fileService;
     private final EntityManager em;
 
@@ -80,9 +77,12 @@ public class UserService implements UserDetailsService {
         // 현재 인증된 사용자 ID 획득
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("사용자 정보를 찾을 수 없습니다."));
-
+        // 동일한 nickname이 존재하는지 체크 (자신 제외)
+        if (userRepository.existsByNicknameAndIdNot(requestDto.nickname(), userId)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
+        }
         // User 엔티티의 수정 로직 호출
-        user.updateProfile(requestDto.email(), requestDto.nickname());
+        user.updateProfile(requestDto.nickname());
 
         return UserResponseDto.from(user);
     }
@@ -91,7 +91,7 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void updatePassword(Long userId, PasswordUpdateRequestDto requestDto) {
         User user = userRepository.findById(userId)
-                .orElseThrow(UserNotFoundException::new);
+                .orElseThrow(() -> new EntityNotFoundException("사용자 정보를 찾을 수 없습니다."));
 
         // 1. 현재 비밀번호 일치 여부 확인 (BCrypt 매칭)
         if (!passwordEncoder.matches(requestDto.currentPassword(), user.getPassword())) {
@@ -132,7 +132,7 @@ public class UserService implements UserDetailsService {
             }
         }
 
-        // 2.5) 삭제될 펫들의 이미지 파일 제거
+        // 2-1) 삭제될 펫들의 이미지 파일 제거
         for (Pet pet : pets) {
             if (pet.getImageUrl() != null && !pet.getImageUrl().isBlank()) {
                 fileService.deleteFile(pet.getImageUrl());

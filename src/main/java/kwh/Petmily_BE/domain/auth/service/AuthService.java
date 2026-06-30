@@ -1,6 +1,7 @@
 package kwh.Petmily_BE.domain.auth.service;
 
 import kwh.Petmily_BE.domain.user.entity.User;
+import kwh.Petmily_BE.domain.auth.dto.AuthResponseDto;
 import kwh.Petmily_BE.domain.auth.dto.LoginResponseDto;
 import kwh.Petmily_BE.domain.auth.dto.TokenDto;
 import kwh.Petmily_BE.domain.auth.entity.RefreshToken;
@@ -24,9 +25,10 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
+    private final TokenService tokenService;
 
     @Transactional
-    public LoginResponseDto login(String loginId, String password) {
+    public AuthResponseDto login(String loginId, String password) {
         // ID/PW를 기반으로 Authentication Token 생성
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(loginId, password);
 
@@ -34,32 +36,20 @@ public class AuthService {
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
         // 인증 정보를 기반으로 JWT 토큰 생성
-        String accessToken = jwtTokenProvider.createToken(authentication);
-        String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
-
-        TokenDto tokenDto = TokenDto.builder()
-                .grantType("Bearer")
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
-
-        // RefreshToken 저장
+        // TokenService에 위임
         Long userId = ((CustomUserDetails) authentication.getPrincipal()).getId();
-        RefreshToken tokenEntity = refreshTokenRepository.findByUserId(userId)
-                        .orElse(new RefreshToken(userId, refreshToken));
-
-        tokenEntity.updateToken(refreshToken);
-        refreshTokenRepository.save(tokenEntity);
+        String username = ((CustomUserDetails) authentication.getPrincipal()).getUsername();
+        TokenDto tokenDto = tokenService.issueTokensForUser(userId, username);
 
         // User 추가 정보 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        return LoginResponseDto.of(user, tokenDto);
+        return AuthResponseDto.from(user, tokenDto);
     }
 
     @Transactional
-    public LoginResponseDto reissue(String refreshToken) {
+    public AuthResponseDto reissue(String refreshToken) {
         // 토큰 유효성 검사
         if(!jwtTokenProvider.validateToken(refreshToken)) {
             throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
@@ -73,24 +63,15 @@ public class AuthService {
         Authentication authentication = jwtTokenProvider.getAuthentication(refreshToken);
 
         // 새로운 토큰 생성
-        String newAccessToken = jwtTokenProvider.createToken(authentication);
-        String newRefreshToken = jwtTokenProvider.createRefreshToken(authentication);
-
-        TokenDto tokenDto = TokenDto.builder()
-                .grantType("Bearer")
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken)
-                .build();
-
-        // DB의 Refresh Token 업데이트
-        savedToken.updateToken(newRefreshToken);
-        refreshTokenRepository.save(savedToken);
+        Long userId = ((CustomUserDetails) authentication.getPrincipal()).getId();
+        String username = ((CustomUserDetails) authentication.getPrincipal()).getUsername();
+        TokenDto tokenDto = tokenService.issueTokensForUser(userId, username);
 
         // 유저 정보 조회 및 최종 응답
         User user = userRepository.findById(savedToken.getUserId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        return LoginResponseDto.of(user,tokenDto);
+        return AuthResponseDto.from(user,tokenDto);
     }
 
     @Transactional
@@ -103,6 +84,6 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        return LoginResponseDto.of(user, null);
+        return LoginResponseDto.of(user);
     }
 }

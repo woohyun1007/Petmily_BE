@@ -10,6 +10,7 @@ public enum ErrorCode {
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "U001", "해당 사용자를 찾을 수 없습니다."),
     DUPLICATE_LOGIN_ID(HttpStatus.BAD_REQUEST, "U002", "이미 존재하는 아이디입니다."),
+    DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST, "U003", "이미 존재하는 닉네임입니다."),
 
     // Password
     INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "PW001", "현재 비밀번호가 틀립니다."),

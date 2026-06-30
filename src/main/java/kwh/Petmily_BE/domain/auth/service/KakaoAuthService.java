@@ -3,9 +3,8 @@ package kwh.Petmily_BE.domain.auth.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
-import kwh.Petmily_BE.domain.auth.dto.LoginResponseDto;
+import kwh.Petmily_BE.domain.auth.dto.AuthResponseDto;
 import kwh.Petmily_BE.domain.auth.dto.TokenDto;
-import kwh.Petmily_BE.domain.auth.entity.RefreshToken;
 import kwh.Petmily_BE.domain.auth.repository.RefreshTokenRepository;
 import kwh.Petmily_BE.domain.user.entity.User;
 import kwh.Petmily_BE.domain.user.repository.UserRepository;
@@ -45,9 +44,10 @@ public class KakaoAuthService {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final TokenService tokenService;
 
     @Transactional
-    public LoginResponseDto loginWithCode(String code) {
+    public AuthResponseDto loginWithCode(String code) {
         try {
             // 1) 토큰 교환
             String tokenUrl = "https://kauth.kakao.com/oauth/token";
@@ -62,19 +62,24 @@ public class KakaoAuthService {
             params.add("code", code);
             if (kakaoClientSecret != null && !kakaoClientSecret.isBlank()) params.add("client_secret", kakaoClientSecret);
 
+            // 토큰 요청 및 응답 처리(POST 방식)
             HttpEntity<MultiValueMap<String, String>> tokenRequest = new HttpEntity<>(params, headers);
             ResponseEntity<String> tokenResponse = restTemplate.postForEntity(tokenUrl, tokenRequest, String.class);
 
+            // 토큰 응답에서 access_token 추출
             JsonNode tokenJson = objectMapper.readTree(tokenResponse.getBody());
             String accessToken = tokenJson.get("access_token").asText();
 
             // 2) 사용자 정보 조회
+            String UserInfoUrl = "https://kapi.kakao.com/v2/user/me";
             HttpHeaders userHeaders = new HttpHeaders();
             userHeaders.setBearerAuth(accessToken);
             userHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
+            // 사용자 정보 요청 및 응답 처리
             HttpEntity<Void> userRequest = new HttpEntity<>(userHeaders);
-            ResponseEntity<String> userResponse = restTemplate.exchange("https://kapi.kakao.com/v2/user/me", HttpMethod.POST, userRequest, String.class);
+            ResponseEntity<String> userResponse = restTemplate.exchange(UserInfoUrl, HttpMethod.POST, userRequest, String.class);
+
             JsonNode userJson = objectMapper.readTree(userResponse.getBody());
 
             Long kakaoId = userJson.get("id").asLong();
@@ -104,7 +109,7 @@ public class KakaoAuthService {
                 if (email == null || email.isBlank()) {
                     // 이메일이 없으면 임의로 생성하거나 null 허용 방식으로 처리 (현재 User.email은 not null, unique)
                     // 여기서는 kakao 이메일이 없으면 예외를 던지지 않고 임시 이메일 생성
-                    email = loginId + "@kakao.local";
+                    email = loginId + "@kakao.com";
                 }
 
                 // 기본 비밀번호는 빈 문자열 또는 랜덤값을 넣고, OAuth 로그인만 허용하도록 처리
@@ -113,7 +118,6 @@ public class KakaoAuthService {
                         .password("")
                         .email(email)
                         .nickname(nickname != null ? nickname : loginId)
-                        .roles(java.util.Set.of())
                         .kakaoId(kakaoId)
                         .build();
 
@@ -122,27 +126,23 @@ public class KakaoAuthService {
 
             // 4) JWT 발급 (프로젝트의 JwtTokenProvider를 이용)
             // 현재 JwtTokenProvider.createToken은 Authentication을 받으므로, 임시 Authentication 생성
-            CustomUserDetails userDetails = new CustomUserDetails(user.getId(), user.getLoginId(), java.util.Collections.singleton(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")));
-            org.springframework.security.authentication.UsernamePasswordAuthenticationToken authenticationToken = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            CustomUserDetails userDetails = new CustomUserDetails(user.getId(), user.getLoginId());
+            org.springframework.security.authentication.UsernamePasswordAuthenticationToken authenticationToken = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(userDetails, null);
 
-            String accessJwt = jwtTokenProvider.createToken(authenticationToken);
-            String refreshJwt = jwtTokenProvider.createRefreshToken(authenticationToken);
+            TokenDto tokenDto = tokenService.issueTokensForUser(user.getId(), user.getLoginId());
 
-            TokenDto tokenDto = TokenDto.builder()
-                    .grantType("Bearer")
-                    .accessToken(accessJwt)
-                    .refreshToken(refreshJwt)
-                    .build();
-
-            // RefreshToken 저장/업데이트
-            RefreshToken tokenEntity = refreshTokenRepository.findByUserId(user.getId()).orElse(new RefreshToken(user.getId(), refreshJwt));
-            tokenEntity.updateToken(refreshJwt);
-            refreshTokenRepository.save(tokenEntity);
-
-            return LoginResponseDto.of(user, tokenDto);
+            return AuthResponseDto.from(user, tokenDto);
 
         } catch (HttpClientErrorException e) {
-            log.error("Kakao API error: {}", e.getResponseBodyAsString());
+            // HttpClientErrorException의 상태/본문/헤더를 상세히 로깅
+            try {
+                var statusCode = e.getStatusCode();
+                String responseBody = e.getResponseBodyAsString();
+                log.error("Kakao API error -> status={}, bodyPresent={}, body={}", statusCode.value(), responseBody != null && !responseBody.isBlank(), responseBody);
+                log.error("Kakao API error headers: {}", e.getResponseHeaders());
+            } catch (Exception ex) {
+                log.error("Error while logging HttpClientErrorException", ex);
+            }
             throw new BusinessException(ErrorCode.OAUTH_FAILED);
         } catch (Exception e) {
             log.error("Kakao login error", e);
