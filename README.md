@@ -155,7 +155,7 @@ JWT_SECRET=your_jwt_secret
 JWT_EXPIRATION=3600000
 JWT_REFRESH_EXPIRATION=86400000
 
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:5173
 KAKAO_CLIENT_ID=your_kakao_client_id
 KAKAO_CLIENT_SECRET=your_kakao_client_secret
 KAKAO_REDIRECT_URI=http://localhost:8080/api/auth/kakao/callback
@@ -173,12 +173,6 @@ Windows에서는 다음 명령을 사용합니다.
 
 ```powershell
 .\gradlew.bat bootRun
-```
-
-애플리케이션 실행 후 Swagger UI에서 API를 확인할 수 있습니다.
-
-```text
-http://localhost:8080/swagger-ui/index.html
 ```
 
 ## 📚 프로젝트 문서
