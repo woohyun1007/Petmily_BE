@@ -2,6 +2,13 @@
 
 > 반려동물 보호자와 펫시터를 연결하는 돌봄 구인·구직 서비스의 백엔드 프로젝트
 
+![Java](https://img.shields.io/badge/Java-17-orange)
+![Spring Boot](https://img.shields.io/badge/SpringBoot-3.3.1-6DB33F)
+![Spring Security](https://img.shields.io/badge/SpringSecurity-6DB33F)
+![JPA](https://img.shields.io/badge/JPA-Hibernate-blue)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1)
+![JWT](https://img.shields.io/badge/JWT-black)
+
 ## 📌 프로젝트 소개
 
 Petmily는 반려동물 보호자가 돌봄을 요청하고, 펫시터가 구인·구직 게시글을 통해 돌봄 정보를 확인할 수 있는 웹 서비스입니다.
