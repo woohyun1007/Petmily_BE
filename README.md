@@ -18,7 +18,6 @@ Spring Boot 기반 REST API로 회원·반려동물·게시글·댓글 기능을
 - 개발 형태: 개인 프로젝트
 - 개발 기간: 2025.09 ~ 진행 중
 - Frontend Repository: [Petmily_FE](https://github.com/woohyun1007/Petmily_FE)
-- Notion : [Petmily 상세 문서](https://app.notion.com/p/228b883853bf80a790abc82225992d56?source=copy_link)
 
 ## 🛠 기술 스택
 
@@ -186,5 +185,6 @@ Windows에서는 다음 명령을 사용합니다.
 - Docker 기반 컨테이너 배포
 - Redis 기반 Refresh Token 관리
 - WebSocket 기반 실시간 채팅
+- CI/CD 자동 배포 구축
   
 - [Petmily 상세 문서](https://app.notion.com/p/228b883853bf80a790abc82225992d56?source=copy_link)
