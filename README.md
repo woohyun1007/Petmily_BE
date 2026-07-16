@@ -18,6 +18,7 @@ Spring Boot 기반 REST API로 회원·반려동물·게시글·댓글 기능을
 - 개발 형태: 개인 프로젝트
 - 개발 기간: 2025.09 ~ 진행 중
 - Frontend Repository: [Petmily_FE](https://github.com/woohyun1007/Petmily_FE)
+- Notion : [Petmily 상세 문서](https://app.notion.com/p/228b883853bf80a790abc82225992d56?source=copy_link)
 
 ## 🛠 기술 스택
 
@@ -120,8 +121,6 @@ erDiagram
     }
 ```
 
-> 실제 ERD 이미지가 준비되면 위 Mermaid 다이어그램을 이미지로 교체하거나 함께 배치할 예정입니다.
-
 ## ✨ 주요 기능
 
 | 도메인 | 구현 기능 |
@@ -182,8 +181,10 @@ Windows에서는 다음 명령을 사용합니다.
 .\gradlew.bat bootRun
 ```
 
-## 📚 프로젝트 문서
+## 📌 Future Improvements
 
-구현 과정, 기술 선택 이유, 인증 구조, 트러블슈팅과 회고는 아래 Notion에서 정리합니다.
-
-- [Petmily 상세 문서](https://www.notion.so/228b883853bf80a790abc82225992d56)
+- Docker 기반 컨테이너 배포
+- Redis 기반 Refresh Token 관리
+- WebSocket 기반 실시간 채팅
+  
+- [Petmily 상세 문서](https://app.notion.com/p/228b883853bf80a790abc82225992d56?source=copy_link)
