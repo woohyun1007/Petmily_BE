@@ -187,4 +187,4 @@ Windows에서는 다음 명령을 사용합니다.
 - WebSocket 기반 실시간 채팅
 - CI/CD 자동 배포 구축
   
-- [Petmily 상세 문서](https://app.notion.com/p/228b883853bf80a790abc82225992d56?source=copy_link)
+- Notion : [Petmily 상세 문서](https://app.notion.com/p/228b883853bf80a790abc82225992d56?source=copy_link)
