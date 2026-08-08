@@ -41,7 +41,6 @@ public class User {
     // DTO 대신 순수 파라미터를 받아서 업데이트
     public void updateProfile(String nickname) {
         if (nickname != null) {
-//            validateUsername(nickname);
             this.nickname = nickname;
         }
     }
@@ -54,9 +53,4 @@ public class User {
     public void setKakaoId(Long kakaoId) {
         this.kakaoId = kakaoId;
     }
-
-//    private void validateUsername(String nickname) {
-//        if (nickname.length() > 10) throw new BusinessException(ErrorCode.INVALID_INPUT_VALUE);
-//    }
-
 }

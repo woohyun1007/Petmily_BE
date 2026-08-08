@@ -16,6 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
@@ -52,7 +53,8 @@ public class SecurityConfig {
                     // 최신 스프링 시큐리티에서 CSRF 토큰을 요청 속성으로 다루도록 설정
                     CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
                     csrf.csrfTokenRequestHandler(requestHandler)
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers(new AntPathRequestMatcher("/api/auth/email/**"));
                 })
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .formLogin(form -> form.disable())
@@ -61,7 +63,7 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/reissue", "/", "/swagger-ui/**", "/v3/**", "/api/auth/kakao/callback", "/api/auth/csrf").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/reissue", "/api/auth/email/**", "/", "/swagger-ui/**", "/v3/**", "/api/auth/kakao/callback", "/api/auth/csrf").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()

@@ -175,7 +175,7 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
 
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", tokenInfo.refreshToken())
-                .path("/")
+                .path("/api/auth/reissue")
                 .maxAge(24 * 60 * 60) // 1일
                 .httpOnly(true)
                 .secure(isProd)

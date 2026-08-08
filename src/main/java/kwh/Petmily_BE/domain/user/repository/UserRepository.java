@@ -1,5 +1,7 @@
 package kwh.Petmily_BE.domain.user.repository;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import kwh.Petmily_BE.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -14,4 +16,8 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
     Optional<User> findByKakaoId(Long kakaoId);
 
     boolean existsByNicknameAndIdNot(String nickname, Long userId);
+
+    boolean existsByNickname(String nickname);
+
+    boolean existsByEmail(String email);
 }

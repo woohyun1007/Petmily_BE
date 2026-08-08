@@ -34,7 +34,7 @@ public class PostController {
         return ResponseEntity.ok(responseDto);
     }
 
-    // 게시글 단건 조회
+    // 게시글 상세 조회
     @GetMapping("/{postId}")
     public ResponseEntity<PostResponseDto> getPostDetail(@PathVariable("postId") Long postId, @AuthenticationPrincipal CustomUserDetails userDetails, HttpServletRequest request, HttpServletResponse response) {
         String identifier = (userDetails != null) ? String.valueOf(userDetails.getId()) : "guest";
@@ -45,10 +45,8 @@ public class PostController {
 
     // 게시글 목록 조회
     @GetMapping
-    public ResponseEntity<Page<PostResponseDto>> getPosts(@RequestParam(name = "page", defaultValue = "0") int page, @RequestParam(name = "size", defaultValue = "10") int size, @RequestParam(name = "category", required = false) String categorystr, @RequestParam(name = "sort", defaultValue = "updateAt,desc") String sort, @RequestParam(name = "status", required = false) String statusStr, @RequestParam(value = "keyword", required = false) String keyword) {
-        String[] sortParams = sort.split(",");
-        Sort sortOrder = Sort.by(sortParams[1].equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC, sortParams[0]);
-        Pageable pageable = PageRequest.of(page, size, sortOrder);
+    public ResponseEntity<Page<PostResponseDto>> getPosts(@RequestParam(name = "page", defaultValue = "0") int page, @RequestParam(name = "size", defaultValue = "10") int size, @RequestParam(name = "category", required = false) String categorystr, @RequestParam(name = "sort", defaultValue = "modifiedAt,desc") String sort, @RequestParam(name = "status", required = false) String statusStr, @RequestParam(value = "keyword", required = false) String keyword) {
+        Pageable pageable = buildPageable(page, size, sort);
 
         PostCategory category = null;
         if(categorystr != null && !categorystr.isEmpty() && !categorystr.equals("undefined")) {
@@ -68,6 +66,21 @@ public class PostController {
             }
         }
         return ResponseEntity.ok(postService.getPostsWithFilters(category, status, keyword, pageable));
+    }
+
+    private Pageable buildPageable(int page, int size, String sort) {
+        String[] sortParams = sort.split(",");
+        String sortProperty = sortParams[0].trim();
+        Sort.Direction direction = sortParams.length > 1 && sortParams[1].equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+
+        Sort sortOrder = Sort.by(direction, sortProperty);
+        if ("viewCount".equalsIgnoreCase(sortProperty)) {
+            sortOrder = sortOrder.and(Sort.by(Sort.Direction.DESC, "modifiedAt"));
+        }
+
+        return PageRequest.of(page, size, sortOrder);
     }
 
     // 게시글 수정
