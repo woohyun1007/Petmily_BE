@@ -186,7 +186,3 @@ Windows에서는 다음 명령을 사용합니다.
 - Docker 기반 컨테이너 배포
 - Redis 기반 Refresh Token 관리
 - WebSocket 기반 실시간 채팅
-  
-- [Petmily 상세 문서](https://app.notion.com/p/228b883853bf80a790abc82225992d56?source=copy_link)
-
-딱 이렇게 하고 README 양식은 끝내자 어때?
